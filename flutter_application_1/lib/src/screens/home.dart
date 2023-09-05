@@ -12,8 +12,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Future<void> fetchData() async {
-    String url = "https://qiita.com/api/v2/items";
+  final _articleList = [];
+  int _page = 1;
+  int _per_page = 20;
+
+  Future<List<dynamic>> fetchData() async {
+    String url =
+        "https://qiita.com/api/v2/items?page=${_page}&per_page=${_per_page}";
     String token = "859a79cf51d8018db9e9ab9a3b69ea224530ef9f";
 
     var res = await http.get(
@@ -24,14 +29,15 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    print(jsonDecode(res.body).length);
+    return jsonDecode(res.body);
   }
 
-  @override
-  void initState() {
-    super.initState();
-
-    fetchData();
+  void _reload() async {
+    _page++;
+    List<dynamic> tekitou = await fetchData();
+    setState(() {
+      _articleList.addAll(tekitou);
+    });
   }
 
   @override
@@ -40,11 +46,29 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('記事一覧'),
       ),
-      body: const Center(
-        child: Text(
-          '記事一覧',
-          style: TextStyle(fontSize: 32),
-        ),
+      body: FutureBuilder(
+        future: fetchData(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            _articleList.addAll(snapshot.data!);
+
+            return ListView.builder(
+              itemCount: _articleList.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(_articleList[index]['title']),
+                  onTap: () {
+                    _reload();
+                  },
+                );
+              },
+            );
+          } else {
+            return const Center(
+              child: Text('ロード中...'),
+            );
+          }
+        },
       ),
     );
   }
