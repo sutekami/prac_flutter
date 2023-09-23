@@ -10,7 +10,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
   void _onTap(int index) {
     setState(() {
@@ -23,13 +23,13 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: [
+        children: const [
           Article(),
           Favorite(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.article), label: '記事一覧'),
           BottomNavigationBarItem(
             icon: Icon(Icons.favorite),
