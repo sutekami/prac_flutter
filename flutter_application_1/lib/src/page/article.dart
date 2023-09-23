@@ -3,104 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
-// class Article extends StatefulWidget {
-//   const Article({Key? key}) : super(key: key);
-
-//   @override
-//   _ArticleState createState() => _ArticleState();
-// }
-
-// class _ArticleState extends State<Article> {
-//   var _articles = [];
-//   int _page_index = 1;
-
-//   Future<dynamic> _get_Articles() async {
-//     String url =
-//         'https://qiita.com/api/v2/authenticated_user/items?page=${_page_index}&per_page=20';
-//     var uri = Uri.parse(url);
-//     Map<String, String> headers = {
-//       'Content-Type': 'application/json',
-//       'Authorization': 'Bearer a51da60bd906fade8e1dffbd02676a89425c2c6e',
-//     };
-//     var res = await http.get(uri, headers: headers);
-//     return res;
-//   }
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _get_Articles();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: const Text('記事一覧'),
-//       ),
-//       body: FutureBuilder(
-//         future: _get_Articles(),
-//         builder: (BuildContext context, snapshot) {
-//           if (snapshot.hasData) {
-//             if (snapshot.data.statusCode == 200) {
-//               return ListView.builder(
-//                   itemCount: _articles.length,
-//                   itemBuilder: (BuildContext context, int index) {
-//                     return ListTile(
-//                       title: Text(
-//                         _articles[index]['title'],
-//                       ),
-//                     );
-//                   });
-//             } else {
-//               return const Center(
-//                 child: Text('読み込みエラー'),
-//               );
-//             }
-//           } else {
-//             return const Center(
-//               child: Text('読み込み中'),
-//             );
-//           }
-//         },
-//       ),
-//       floatingActionButton: FloatingActionButton(
-//         onPressed: () {
-//           // _page_index++;
-//         },
-//         child: const Icon(Icons.book),
-//       ),
-//     );
-//   }
-// }
-
-// class Article extends StatelessWidget {
-//   const Article({Key? key}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ChangeNotifierProvider(
-//       create: (_) => Counter(),
-//       child: const Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           TextWidgetA(),
-//           TextWidgetB(),
-//           TextWidgetC(),
-//           ButtonWidgetA(),
-//           ButtonWidgetB(),
-//           ButtonWidgetC(),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 class FetchArticle extends ChangeNotifier {
-  var articles = ['Apple', 'Banana', 'WaterMelon'];
+  var articles = [];
+  int _page_index = 0;
 
-  void addArticleToArticles() {
-    articles.add('SOMETHING');
+  Future<void> get_Articles() async {
+    _page_index++;
+    String url =
+        'https://qiita.com/api/v2/items?page=${_page_index}&per_page=20';
+    var uri = Uri.parse(url);
+    Map<String, String> headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer a51da60bd906fade8e1dffbd02676a89425c2c6e',
+    };
+    var res = await http.get(uri, headers: headers);
+    articles.addAll(jsonDecode(res.body));
     notifyListeners();
   }
 }
@@ -108,11 +25,21 @@ class FetchArticle extends ChangeNotifier {
 class Article extends StatelessWidget {
   const Article({Key? key}) : super(key: key);
 
+  String returnStringFrom(List tags) {
+    print(tags);
+    return 'Ruby';
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => FetchArticle(),
       builder: (context, child) {
+        // 初期化実行 もしgetした記事の数が一つもないときのみ起動
+        if (context.watch<FetchArticle>().articles.length == 0) {
+          context.read<FetchArticle>().get_Articles();
+        }
+
         return Scaffold(
           appBar: AppBar(
             title: const Text('記事一覧'),
@@ -121,12 +48,68 @@ class Article extends StatelessWidget {
               itemCount: context.watch<FetchArticle>().articles.length,
               itemBuilder: (BuildContext context, int index) {
                 return Center(
-                  child: Text(context.watch<FetchArticle>().articles[index]),
+                  child: Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey, width: 1.0)),
+                    width: 300,
+                    height: 150,
+                    margin: EdgeInsets.only(top: 10.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              color: Colors.yellow,
+                              width: 100,
+                              // height: 50,
+                              child: Text('id: ' +
+                                  context.watch<FetchArticle>().articles[index]
+                                      ['user']['id']),
+                            ),
+                            Container(
+                              color: Colors.green,
+                              width: 100,
+                              height: 50,
+                              child: ListView.builder(
+                                itemCount: context
+                                    .watch<FetchArticle>()
+                                    .articles[index]['tags']
+                                    .length,
+                                itemBuilder: (context, tagIndex) {
+                                  return Text(context
+                                          .watch<FetchArticle>()
+                                          .articles[index]['tags'][tagIndex]
+                                      ['name']);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          color: Colors.blue,
+                          width: 250,
+                          height: 50,
+                          child: Text(context
+                              .watch<FetchArticle>()
+                              .articles[index]['title']),
+                          alignment: Alignment.center,
+                        ),
+                        Container(
+                          color: Colors.red,
+                          width: 100,
+                          child: Text(context
+                              .watch<FetchArticle>()
+                              .articles[index]['created_at']),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               }),
           floatingActionButton: FloatingActionButton(
-            onPressed: () =>
-                context.read<FetchArticle>().addArticleToArticles(),
+            onPressed: () => context.read<FetchArticle>().get_Articles(),
             child: const Icon(Icons.add),
           ),
         );

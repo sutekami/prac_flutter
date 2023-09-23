@@ -9,11 +9,34 @@ class Favorite extends StatelessWidget {
       appBar: AppBar(
         title: const Text('お気に入り'),
       ),
-      body: const Center(
-        child: Text(
-          'お気に入り',
-          style: TextStyle(fontSize: 32),
-        ),
+      body: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                color: Colors.yellow,
+                width: 100,
+                height: 50,
+              ),
+              Container(
+                color: const Color.fromARGB(255, 57, 172, 42),
+                width: 100,
+                height: 50,
+              ),
+            ],
+          ),
+          Container(
+            color: Colors.blue,
+            width: 100,
+            height: 100,
+          ),
+          Container(
+            color: Colors.red,
+            width: 100,
+            height: 100,
+          ),
+        ],
       ),
     );
   }
