@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
-class FetchArticle extends ChangeNotifier {
+class ArticleNotifier extends ChangeNotifier {
+  String tekitou = 'tekitou';
   var articles = [];
+  List<String> articleIds = [];
   int _page_index = 0;
 
   Future<void> get_Articles() async {
@@ -20,24 +22,24 @@ class FetchArticle extends ChangeNotifier {
     articles.addAll(jsonDecode(res.body));
     notifyListeners();
   }
+
+  void controllArticleIds(String id) {
+    print(id);
+    // notifyListeners();
+  }
 }
 
 class Article extends StatelessWidget {
   const Article({Key? key}) : super(key: key);
 
-  String returnStringFrom(List tags) {
-    print(tags);
-    return 'Ruby';
-  }
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => FetchArticle(),
+      create: (_) => ArticleNotifier(),
       builder: (context, child) {
         // 初期化実行 もしgetした記事の数が一つもないときのみ起動
-        if (context.watch<FetchArticle>().articles.isEmpty) {
-          context.read<FetchArticle>().get_Articles();
+        if (context.watch<ArticleNotifier>().articles.isEmpty) {
+          context.read<ArticleNotifier>().get_Articles();
         }
 
         return Scaffold(
@@ -45,7 +47,7 @@ class Article extends StatelessWidget {
             title: const Text('記事一覧'),
           ),
           body: ListView.builder(
-              itemCount: context.watch<FetchArticle>().articles.length,
+              itemCount: context.watch<ArticleNotifier>().articles.length,
               itemBuilder: (BuildContext context, int index) {
                 return Center(
                   child: Container(
@@ -60,19 +62,26 @@ class Article extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            ArticleId(index: index),
+                            ArticleUserId(index: index),
                             ArticleTag(index: index),
+                            ArticleFavoriteButton(index: index),
                           ],
                         ),
                         ArticleTitle(index: index),
-                        ArticleCreatedDate(index: index),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            ArticleCreatedDate(index: index),
+                            ArticleId(index: index),
+                          ],
+                        )
                       ],
                     ),
                   ),
                 );
               }),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => context.read<FetchArticle>().get_Articles(),
+            onPressed: () => context.read<ArticleNotifier>().get_Articles(),
             child: const Icon(Icons.add),
           ),
         );
@@ -105,9 +114,9 @@ class ArticleBody extends StatelessWidget {
   }
 }
 
-class ArticleId extends StatelessWidget {
+class ArticleUserId extends StatelessWidget {
   int index;
-  ArticleId({required this.index});
+  ArticleUserId({required this.index});
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +125,7 @@ class ArticleId extends StatelessWidget {
       width: 100,
       // height: 50,
       child: Text(
-          'id: ${context.watch<FetchArticle>().articles[index]['user']['id']}'),
+          'id: ${context.watch<ArticleNotifier>().articles[index]['user']['id']}'),
     );
   }
 }
@@ -132,9 +141,10 @@ class ArticleTag extends StatelessWidget {
       width: 100,
       height: 50,
       child: ListView.builder(
-        itemCount: context.watch<FetchArticle>().articles[index]['tags'].length,
+        itemCount:
+            context.watch<ArticleNotifier>().articles[index]['tags'].length,
         itemBuilder: (context, tagIndex) {
-          return Text(context.watch<FetchArticle>().articles[index]['tags']
+          return Text(context.watch<ArticleNotifier>().articles[index]['tags']
               [tagIndex]['name']);
         },
       ),
@@ -152,7 +162,7 @@ class ArticleTitle extends StatelessWidget {
       onPressed: () {
         Navigator.of(context).pushNamed('/article_body',
             arguments: ArticleBodyArguments(
-                body: Provider.of<FetchArticle>(context, listen: false)
+                body: Provider.of<ArticleNotifier>(context, listen: false)
                     .articles[index]['body']));
       },
       child: Container(
@@ -160,7 +170,7 @@ class ArticleTitle extends StatelessWidget {
         width: 250,
         height: 100,
         alignment: Alignment.center,
-        child: Text(context.watch<FetchArticle>().articles[index]['title']),
+        child: Text(context.watch<ArticleNotifier>().articles[index]['title']),
       ),
     );
   }
@@ -175,7 +185,48 @@ class ArticleCreatedDate extends StatelessWidget {
     return Container(
       color: Colors.red,
       width: 100,
-      child: Text(context.watch<FetchArticle>().articles[index]['created_at']),
+      child:
+          Text(context.watch<ArticleNotifier>().articles[index]['created_at']),
+    );
+  }
+}
+
+class ArticleId extends StatelessWidget {
+  int index;
+  ArticleId({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 100,
+      color: Colors.purple,
+      child: Text(context.watch<ArticleNotifier>().articles[index]['id']),
+    );
+  }
+}
+
+class ArticleFavoriteButton extends StatelessWidget {
+  int index;
+  ArticleFavoriteButton({required this.index});
+
+  bool isTrue = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        context.read<ArticleNotifier>().controllArticleIds(
+            Provider.of<ArticleNotifier>(context, listen: false).articles[index]
+                ['id']);
+      },
+      style: ElevatedButton.styleFrom(
+        alignment: Alignment.center,
+        fixedSize: const Size(50, 25),
+        foregroundColor:
+            isTrue ? Color.fromARGB(255, 224, 96, 139) : Colors.white,
+        backgroundColor: Color.fromARGB(255, 100, 179, 245),
+      ),
+      child: const Icon(Icons.favorite),
     );
   }
 }
