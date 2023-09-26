@@ -36,7 +36,7 @@ class Article extends StatelessWidget {
       create: (_) => FetchArticle(),
       builder: (context, child) {
         // 初期化実行 もしgetした記事の数が一つもないときのみ起動
-        if (context.watch<FetchArticle>().articles.length == 0) {
+        if (context.watch<FetchArticle>().articles.isEmpty) {
           context.read<FetchArticle>().get_Articles();
         }
 
@@ -52,57 +52,20 @@ class Article extends StatelessWidget {
                     decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey, width: 1.0)),
                     width: 300,
-                    height: 150,
+                    height: 200,
                     margin: EdgeInsets.only(top: 10.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Container(
-                              color: Colors.yellow,
-                              width: 100,
-                              // height: 50,
-                              child: Text('id: ' +
-                                  context.watch<FetchArticle>().articles[index]
-                                      ['user']['id']),
-                            ),
-                            Container(
-                              color: Colors.green,
-                              width: 100,
-                              height: 50,
-                              child: ListView.builder(
-                                itemCount: context
-                                    .watch<FetchArticle>()
-                                    .articles[index]['tags']
-                                    .length,
-                                itemBuilder: (context, tagIndex) {
-                                  return Text(context
-                                          .watch<FetchArticle>()
-                                          .articles[index]['tags'][tagIndex]
-                                      ['name']);
-                                },
-                              ),
-                            ),
+                            ArticleId(index: index),
+                            ArticleTag(index: index),
                           ],
                         ),
-                        Container(
-                          color: Colors.blue,
-                          width: 250,
-                          height: 50,
-                          child: Text(context
-                              .watch<FetchArticle>()
-                              .articles[index]['title']),
-                          alignment: Alignment.center,
-                        ),
-                        Container(
-                          color: Colors.red,
-                          width: 100,
-                          child: Text(context
-                              .watch<FetchArticle>()
-                              .articles[index]['created_at']),
-                        ),
+                        ArticleTitle(index: index),
+                        ArticleCreatedDate(index: index),
                       ],
                     ),
                   ),
@@ -114,6 +77,105 @@ class Article extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class ArticleBodyArguments {
+  final String body;
+
+  ArticleBodyArguments({required this.body});
+}
+
+class ArticleBody extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final args =
+        ModalRoute.of(context)!.settings.arguments as ArticleBodyArguments;
+
+    return Scaffold(
+        appBar: AppBar(
+          title: const Text('記事本文'),
+        ),
+        body: Center(
+            child: SingleChildScrollView(
+          padding: const EdgeInsets.only(left: 10, right: 10),
+          child: Text(args.body),
+        )));
+  }
+}
+
+class ArticleId extends StatelessWidget {
+  int index;
+  ArticleId({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.yellow,
+      width: 100,
+      // height: 50,
+      child: Text(
+          'id: ${context.watch<FetchArticle>().articles[index]['user']['id']}'),
+    );
+  }
+}
+
+class ArticleTag extends StatelessWidget {
+  int index;
+  ArticleTag({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.green,
+      width: 100,
+      height: 50,
+      child: ListView.builder(
+        itemCount: context.watch<FetchArticle>().articles[index]['tags'].length,
+        itemBuilder: (context, tagIndex) {
+          return Text(context.watch<FetchArticle>().articles[index]['tags']
+              [tagIndex]['name']);
+        },
+      ),
+    );
+  }
+}
+
+class ArticleTitle extends StatelessWidget {
+  int index;
+  ArticleTitle({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        Navigator.of(context).pushNamed('/article_body',
+            arguments: ArticleBodyArguments(
+                body: Provider.of<FetchArticle>(context, listen: false)
+                    .articles[index]['body']));
+      },
+      child: Container(
+        color: Colors.blue,
+        width: 250,
+        height: 100,
+        alignment: Alignment.center,
+        child: Text(context.watch<FetchArticle>().articles[index]['title']),
+      ),
+    );
+  }
+}
+
+class ArticleCreatedDate extends StatelessWidget {
+  int index;
+  ArticleCreatedDate({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.red,
+      width: 100,
+      child: Text(context.watch<FetchArticle>().articles[index]['created_at']),
     );
   }
 }
